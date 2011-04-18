@@ -58,6 +58,8 @@ class Hookup
   end
 
   def bundle(old, new, *args)
+    return if args.first == '0'
+
     return unless File.exist?('Gemfile')
     if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
       begin
