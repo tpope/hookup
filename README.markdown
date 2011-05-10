@@ -20,7 +20,7 @@ Bundling
 --------
 
 Each time your current HEAD changes, hookup checks to see if your
-`Gemfile`, `Gemfile.lock`, or gem spec has changed.  If so it runs
+`Gemfile`, `Gemfile.lock`, or gem spec has changed.  If so, it runs
 `bundle check`, and if that indicates any dependencies are unsatisfied,
 it runs `bundle install`.
 
