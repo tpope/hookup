@@ -9,7 +9,7 @@ class Hookup
     new.run(*argv)
   rescue Error => e
     puts e
-    exit 1
+    exit
   end
 
   def run(*argv)
