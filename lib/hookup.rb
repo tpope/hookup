@@ -30,7 +30,12 @@ class Hookup
   def install
     dir = %x{git rev-parse --git-dir}.chomp
     raise Error, dir unless $?.success?
-    hook = File.join(dir, 'hooks', 'post-checkout')
+
+    hook_dir = File.join(dir, 'hooks')
+    Dir.mkdir(hook_dir, 0755) unless Dir.exists?(hook_dir)
+
+    hook = File.join(hook_dir, 'post-checkout')
+
     unless File.exist?(hook)
       File.open(hook, 'w', 0777) do |f|
         f.puts "#!/bin/bash"
