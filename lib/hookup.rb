@@ -32,7 +32,7 @@ class Hookup
     raise Error, dir unless $?.success?
 
     hook_dir = File.join(dir, 'hooks')
-    Dir.mkdir(hook_dir, 0755) unless Dir.exists?(hook_dir)
+    Dir.mkdir(hook_dir, 0755) unless File.directory?(hook_dir)
 
     hook = File.join(hook_dir, 'post-checkout')
 
