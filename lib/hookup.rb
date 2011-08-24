@@ -3,10 +3,16 @@ class Hookup
   class Error < RuntimeError
   end
 
+  class Failure < Error
+  end
+
   EMPTY_DIR = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
   def self.run(*argv)
     new.run(*argv)
+  rescue Failure => e
+    puts e
+    exit 1
   rescue Error => e
     puts e
     exit
@@ -27,29 +33,38 @@ class Hookup
     end
   end
 
-  def install
-    dir = %x{git rev-parse --git-dir}.chomp
-    raise Error, dir unless $?.success?
-
-    hook_dir = File.join(dir, 'hooks')
-    Dir.mkdir(hook_dir, 0755) unless File.directory?(hook_dir)
-
-    hook = File.join(hook_dir, 'post-checkout')
-
-    unless File.exist?(hook)
-      File.open(hook, 'w', 0777) do |f|
-        f.puts "#!/bin/bash"
-      end
+  def git_dir
+    unless @git_dir
+      @git_dir = %x{git rev-parse --git-dir}.chomp
+      raise Error, dir unless $?.success?
     end
-    if File.read(hook) =~ /^[^#]*\bhookup\b/
-      puts "Already hooked up!"
-    else
-      File.open(hook, "a") do |f|
-        f.puts %(hookup post-checkout "$@")
-      end
-      puts "Hooked up!"
+    @git_dir
+  end
+
+  def install
+    append(File.join(git_dir, 'hooks', 'post-checkout'), 0777) do |body, f|
+      f.puts "#!/bin/bash" unless body
+      f.puts %(hookup post-checkout "$@") if body !~ /hookup/
+    end
+
+    append(File.join(git_dir, 'info', 'attributes')) do |body, f|
+      map = 'db/schema.rb merge=railsschema'
+      f.puts map unless body.to_s.include?(map)
+    end
+
+    system 'git', 'config', 'merge.railsschema.driver', 'hookup resolve-schema %A %O %B %L'
+
+    puts "Hooked up!"
+  end
+
+  def append(file, *args)
+    Dir.mkdir(File.dirname(file)) unless File.directory?(File.dirname(file))
+    body = File.read(file) if File.exist?(file)
+    File.open(file, 'a', *args) do |f|
+      yield body, f
     end
   end
+  protected :append
 
   def post_checkout(*args)
     old, new = args.shift, args.shift || 'HEAD'
@@ -113,6 +128,19 @@ class Hookup
 
     ensure
       system 'git', 'checkout', '--', *schemas if schemas.any?
+    end
+  end
+
+  def resolve_schema(a, o, b, marker_size = 7)
+    system 'git', 'merge-file', "--marker-size=#{marker_size}", a, o, b
+    body = File.read(a)
+    asd = "ActiveRecord::Schema.define"
+    x = body.sub!(/^<+ .*\n#{asd}\(:version => (\d+)\) do\n=+\n#{asd}\(:version => (\d+)\) do\n>+ .*/) do
+      "#{asd}(:version => #{[$1, $2].max}) do"
+    end
+    File.open(a, 'w') { |f| f.write(body) }
+    if body.include?('<' * marker_size.to_i)
+      raise Failure, 'Failed to automatically resolve schema conflict'
     end
   end
 
