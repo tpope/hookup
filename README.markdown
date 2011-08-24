@@ -35,3 +35,13 @@ db:migrate` is invoked to bring everything else up to date.
 Each time there's a conflict in `db/schema.rb` on the
 `Rails::Schema.define` line, hookup resolves it in favor of the newer of
 the two versions.
+
+ChangeLog
+---------
+
+[See it on the wiki](https://github.com/tpope/hookup/wiki/ChangeLog)
+
+License
+-------
+
+Copyright (c) Tim Pope.  MIT License.
