@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tim Pope"]
   s.email       = ["code@tp"+'ope.net']
-  s.homepage    = ""
+  s.homepage    = "https://github.com/tpope/hookup"
   s.summary     = %q{Automate the bundle/migration tedium of Rails with Git hooks}
   s.description = %q{Automatically bundle and migrate your Rails app when switching branches, merging upstream changes, and bisecting.}
 
