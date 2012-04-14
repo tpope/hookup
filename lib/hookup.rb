@@ -67,6 +67,7 @@ class Hookup
   protected :append
 
   def post_checkout(*args)
+    return if ENV['GIT_REFLOG_ACTION'] =~ /^pull/
     old, new = args.shift, args.shift || 'HEAD'
     if old == '0000000000000000000000000000000000000000'
       old = EMPTY_DIR
