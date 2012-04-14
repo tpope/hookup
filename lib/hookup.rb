@@ -67,66 +67,87 @@ class Hookup
   protected :append
 
   def post_checkout(*args)
-    return if ENV['GIT_REFLOG_ACTION'] =~ /^pull/
-    old, new = args.shift, args.shift || 'HEAD'
-    if old == '0000000000000000000000000000000000000000'
-      old = EMPTY_DIR
-    elsif old.nil?
-      old = '@{-1}'
-    end
-    return if args.first == '0'
-    bundle(old, new)
-    migrate(old, new)
+    PostCheckout.new(ENV, *args).run
   end
 
-  def bundle(old, new)
-    return unless File.exist?('Gemfile')
-    if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
-      begin
-        # If Bundler in turn spawns Git, it can get confused by $GIT_DIR
-        git_dir = ENV.delete('GIT_DIR')
-        %x{bundle check}
-        unless $?.success?
-          puts "Bundling..."
-          system("bundle | grep -v '^Using ' | grep -v ' is complete'")
-        end
-      ensure
-        ENV['GIT_DIR'] = git_dir
+  class PostCheckout
+
+    attr_reader :old, :new, :env
+
+    def partial?
+      @partial
+    end
+
+    def initialize(env, *args)
+      @env = env
+      @old = args.shift
+      if @old == '0000000000000000000000000000000000000000'
+        @old = EMPTY_DIR
+      elsif @old.nil?
+        @old = '@{-1}'
+      end
+      @new = args.shift || 'HEAD'
+      @partial = (args.shift == '0')
+    end
+
+    def run
+      return if env['GIT_REFLOG_ACTION'] =~ /^pull/
+      unless partial?
+        bundle
+        migrate
       end
     end
-  end
 
-  def migrate(old, new)
-    schemas = %w(db/schema.rb db/development_structure.sql).select do |schema|
-      status = %x{git diff --name-status #{old} #{new} -- #{schema}}.chomp
-      system 'rake', 'db:create' if status =~ /^A/
-      status !~ /^D/ && !status.empty?
-    end
-
-    migrations = %x{git diff --name-status #{old} #{new} -- db/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
-    begin
-      migrations.select {|(t,f)| %w(D M).include?(t)}.reverse.each do |type, file|
+    def bundle
+      return unless File.exist?('Gemfile')
+      if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
         begin
-          system 'git', 'checkout', old, '--', file
-          unless system 'rake', 'db:migrate:down', "VERSION=#{File.basename(file)}"
-            raise Error, "Failed to rollback #{File.basename(file)}. Consider rake db:setup"
+          # If Bundler in turn spawns Git, it can get confused by $GIT_DIR
+          git_dir = ENV.delete('GIT_DIR')
+          %x{bundle check}
+          unless $?.success?
+            puts "Bundling..."
+            system("bundle | grep -v '^Using ' | grep -v ' is complete'")
           end
         ensure
-          if type == 'D'
-            system 'git', 'rm', '--force', '--quiet', '--', file
-          else
-            system 'git', 'checkout', new, '--', file
-          end
+          ENV['GIT_DIR'] = git_dir
         end
       end
+    end
 
-      if migrations.any? {|(t,f)| %w(A M).include?(t)}
-        system 'rake', 'db:migrate'
+    def migrate
+      schemas = %w(db/schema.rb db/development_structure.sql).select do |schema|
+        status = %x{git diff --name-status #{old} #{new} -- #{schema}}.chomp
+        system 'rake', 'db:create' if status =~ /^A/
+        status !~ /^D/ && !status.empty?
       end
 
-    ensure
-      system 'git', 'checkout', '--', *schemas if schemas.any?
+      migrations = %x{git diff --name-status #{old} #{new} -- db/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
+      begin
+        migrations.select {|(t,f)| %w(D M).include?(t)}.reverse.each do |type, file|
+          begin
+            system 'git', 'checkout', old, '--', file
+            unless system 'rake', 'db:migrate:down', "VERSION=#{File.basename(file)}"
+              raise Error, "Failed to rollback #{File.basename(file)}. Consider rake db:setup"
+            end
+          ensure
+            if type == 'D'
+              system 'git', 'rm', '--force', '--quiet', '--', file
+            else
+              system 'git', 'checkout', new, '--', file
+            end
+          end
+        end
+
+        if migrations.any? {|(t,f)| %w(A M).include?(t)}
+          system 'rake', 'db:migrate'
+        end
+
+      ensure
+        system 'git', 'checkout', '--', *schemas if schemas.any?
+      end
     end
+
   end
 
   def resolve_schema(a, o, b, marker_size = 7)
