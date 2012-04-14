@@ -74,13 +74,12 @@ class Hookup
     elsif old.nil?
       old = '@{-1}'
     end
-    bundle(old, new, *args)
-    migrate(old, new, *args)
+    return if args.first == '0'
+    bundle(old, new)
+    migrate(old, new)
   end
 
-  def bundle(old, new, *args)
-    return if args.first == '0'
-
+  def bundle(old, new)
     return unless File.exist?('Gemfile')
     if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
       begin
@@ -97,9 +96,7 @@ class Hookup
     end
   end
 
-  def migrate(old, new, *args)
-    return if args.first == '0'
-
+  def migrate(old, new)
     schemas = %w(db/schema.rb db/development_structure.sql).select do |schema|
       status = %x{git diff --name-status #{old} #{new} -- #{schema}}.chomp
       system 'rake', 'db:create' if status =~ /^A/
