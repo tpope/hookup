@@ -78,8 +78,16 @@ class Hookup
       @partial
     end
 
-    def initialize(env, *args)
-      @env = env
+    def initialize(environment, *args)
+      @env ||= environment.to_hash.dup
+      require 'optparse'
+      opts = OptionParser.new
+      opts.banner = "Usage: hookup post-checkout <old> <new> <full>"
+      opts.on('--load-schema=COMMAND', 'Run COMMAND on migration failure') do |command|
+        env['HOOKUP_LOAD_SCHEMA'] = command
+      end
+      opts.parse!(args)
+
       @old = args.shift
       if @old == '0000000000000000000000000000000000000000'
         @old = EMPTY_DIR
@@ -122,13 +130,15 @@ class Hookup
         status !~ /^D/ && !status.empty?
       end
 
+      return if schemas.empty?
+
       migrations = %x{git diff --name-status #{old} #{new} -- db/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
       begin
         migrations.select {|(t,f)| %w(D M).include?(t)}.reverse.each do |type, file|
           begin
             system 'git', 'checkout', old, '--', file
             unless system 'rake', 'db:migrate:down', "VERSION=#{File.basename(file)}"
-              raise Error, "Failed to rollback #{File.basename(file)}. Consider rake db:setup"
+              raise Error, "Failed to rollback #{File.basename(file)}"
             end
           ensure
             if type == 'D'
@@ -144,7 +154,19 @@ class Hookup
         end
 
       ensure
-        system 'git', 'checkout', '--', *schemas if schemas.any?
+        changes = %x{git diff --name-status #{new} -- #{schemas.join(' ')}}
+
+        unless changes.empty?
+          system 'git', 'checkout', '--', *schemas
+
+          puts "Schema out of sync."
+
+          fallback = env['HOOKUP_LOAD_SCHEMA']
+          if fallback && fallback != ''
+            puts "Trying #{fallback}..."
+            system fallback
+          end
+        end
       end
     end
 
