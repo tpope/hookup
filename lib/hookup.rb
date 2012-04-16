@@ -99,7 +99,7 @@ class Hookup
     end
 
     def run
-      return if env['GIT_REFLOG_ACTION'] =~ /^pull/
+      return if env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
       unless partial?
         bundle
         migrate
