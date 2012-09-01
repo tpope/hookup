@@ -115,7 +115,7 @@ class Hookup
           %x{bundle check}
           unless $?.success?
             puts "Bundling..."
-            system("bundle | grep -v '^Using ' | grep -v ' is complete'")
+            system("bundle install --binstubs=.git/binstubs | grep -v '^Using ' | grep -v ' is complete'")
           end
         ensure
           ENV['GIT_DIR'] = git_dir
