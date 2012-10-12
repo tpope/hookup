@@ -171,7 +171,7 @@ class Hookup
     end
 
     def rake(*args)
-      system 'rake', *args
+      system 'bundle', 'exec', 'rake', *args
     end
 
   end
