@@ -106,8 +106,12 @@ class Hookup
       end
     end
 
+    def bundler?
+      File.exist?('Gemfile')
+    end
+
     def bundle
-      return unless File.exist?('Gemfile')
+      return unless bundler?
       if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
         begin
           # If Bundler in turn spawns Git, it can get confused by $GIT_DIR
@@ -171,7 +175,11 @@ class Hookup
     end
 
     def rake(*args)
-      system 'bundle', 'exec', 'rake', *args
+      if bundler?
+        system 'bundle', 'exec', 'rake', *args
+      else
+        system 'rake', *args
+      end
     end
 
   end
