@@ -30,6 +30,10 @@ migrations have been added, deleted, or modified.  Deleted and modified
 migrations are given the `rake db:migrate:down` treatment, then `rake
 db:migrate` is invoked to bring everything else up to date.
 
+To force reloading the database if migrating fails, Add
+`--load-schema="rake db:reset"` to the `hookup post-checkout` line in
+`.git/hooks/post-checkout`.
+
 ### Schema Resolving
 
 Each time there's a conflict in `db/schema.rb` on the
