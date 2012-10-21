@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = "hookup"
-  s.version     = "1.1.0"
+  s.version     = "1.2.0"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tim Pope"]
   s.email       = ["code@tp"+'ope.net']
