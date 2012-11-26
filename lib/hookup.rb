@@ -78,11 +78,18 @@ class Hookup
       @partial
     end
 
+    def schema_dir
+      env['HOOKUP_SCHEMA_DIR']
+    end
+
     def initialize(environment, *args)
       @env ||= environment.to_hash.dup
       require 'optparse'
       opts = OptionParser.new
       opts.banner = "Usage: hookup post-checkout <old> <new> <full>"
+      opts.on('--schema-dir=DIRECTORY', 'Path to DIRECTORY containing schema.rb and migrate/') do |directory|
+        env['HOOKUP_SCHEMA_DIR'] = directory
+      end
       opts.on('--load-schema=COMMAND', 'Run COMMAND on migration failure') do |command|
         env['HOOKUP_LOAD_SCHEMA'] = command
       end
@@ -96,6 +103,8 @@ class Hookup
       end
       @new = args.shift || 'HEAD'
       @partial = (args.shift == '0')
+
+      env['HOOKUP_SCHEMA_DIR'] = 'db' unless schema_dir && File.directory?(schema_dir)
     end
 
     def run
@@ -128,7 +137,7 @@ class Hookup
     end
 
     def migrate
-      schemas = %w(db/schema.rb db/development_structure.sql).select do |schema|
+      schemas = %W(#{schema_dir}/schema.rb #{schema_dir}/development_structure.sql).select do |schema|
         status = %x{git diff --name-status #{old} #{new} -- #{schema}}.chomp
         rake 'db:create' if status =~ /^A/
         status !~ /^D/ && !status.empty?
@@ -136,7 +145,7 @@ class Hookup
 
       return if schemas.empty?
 
-      migrations = %x{git diff --name-status #{old} #{new} -- db/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
+      migrations = %x{git diff --name-status #{old} #{new} -- #{schema_dir}/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
       begin
         migrations.select {|(t,f)| %w(D M).include?(t)}.reverse.each do |type, file|
           begin
