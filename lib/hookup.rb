@@ -91,7 +91,7 @@ class Hookup
       require 'optparse'
       opts = OptionParser.new
       opts.banner = "Usage: hookup post-checkout <old> <new> <full>"
-      opts.on('-Cdirectory', 'cd to directory, before executing migrations') do |directory|
+      opts.on('-Cdirectory', 'cd to directory') do |directory|
         env['HOOKUP_WORKING_DIR'] = directory
       end
       opts.on('--schema-dir=DIRECTORY', 'Path to DIRECTORY containing schema.rb and migrate/') do |directory|
