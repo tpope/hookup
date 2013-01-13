@@ -79,7 +79,11 @@ class Hookup
     end
 
     def schema_dir
-      env['HOOKUP_SCHEMA_DIR']
+      File.expand_path(env['HOOKUP_SCHEMA_DIR'], working_dir)
+    end
+
+    def working_dir
+      env['HOOKUP_WORKING_DIR'] || '.'
     end
 
     def initialize(environment, *args)
@@ -87,6 +91,9 @@ class Hookup
       require 'optparse'
       opts = OptionParser.new
       opts.banner = "Usage: hookup post-checkout <old> <new> <full>"
+      opts.on('-Cdirectory', 'cd to directory, before executing migrations') do |directory|
+        env['HOOKUP_WORKING_DIR'] = directory
+      end
       opts.on('--schema-dir=DIRECTORY', 'Path to DIRECTORY containing schema.rb and migrate/') do |directory|
         env['HOOKUP_SCHEMA_DIR'] = directory
       end
@@ -128,7 +135,9 @@ class Hookup
           %x{bundle check}
           unless $?.success?
             puts "Bundling..."
-            system("bundle | grep -v '^Using ' | grep -v ' is complete'")
+            Dir.chdir(working_dir) do
+              system("bundle | grep -v '^Using ' | grep -v ' is complete'")
+            end
           end
         ensure
           ENV['GIT_DIR'] = git_dir
@@ -184,10 +193,12 @@ class Hookup
     end
 
     def rake(*args)
-      if bundler?
-        system 'bundle', 'exec', 'rake', *args
-      else
-        system 'rake', *args
+      Dir.chdir(working_dir) do
+        if bundler?
+          system 'bundle', 'exec', 'rake', *args
+        else
+          system 'rake', *args
+        end
       end
     end
 
