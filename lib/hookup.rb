@@ -111,7 +111,7 @@ class Hookup
       @new = args.shift || 'HEAD'
       @partial = (args.shift == '0')
 
-      env['HOOKUP_SCHEMA_DIR'] = 'db' unless schema_dir && File.directory?(schema_dir)
+      env['HOOKUP_SCHEMA_DIR'] = 'db' unless env['HOOKUP_SCHEMA_DIR'] && File.directory?(schema_dir)
     end
 
     def run
