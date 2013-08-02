@@ -79,7 +79,7 @@ class Hookup
     end
 
     def schema_dir
-      File.expand_path(env['HOOKUP_SCHEMA_DIR'], working_dir)
+      File.join(working_dir, env['HOOKUP_SCHEMA_DIR'])
     end
 
     def working_dir
