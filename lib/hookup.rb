@@ -115,7 +115,7 @@ class Hookup
     end
 
     def run
-      return if env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
+      return if skipped? || env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
       unless partial?
         bundle
         migrate
@@ -200,6 +200,10 @@ class Hookup
           system 'rake', *args
         end
       end
+    end
+
+    def skipped?
+      env['SKIP_HOOKUP']
     end
 
   end
