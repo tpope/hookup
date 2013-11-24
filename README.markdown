@@ -48,6 +48,12 @@ Each time there's a conflict in `db/schema.rb` on the
 `Rails::Schema.define` line, hookup resolves it in favor of the newer of
 the two versions.
 
+### Skip Hookup
+
+Set `SKIP_HOOKUP` environment variable to skip hookup.
+
+    SKIP_HOOKUP=1 git checkout master
+
 ChangeLog
 ---------
 
