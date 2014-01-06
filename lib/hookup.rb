@@ -82,6 +82,12 @@ class Hookup
       File.join(working_dir, env['HOOKUP_SCHEMA_DIR'])
     end
 
+    def possible_schemas
+      %w(development_structure.sql schema.rb structure.sql).map do |file|
+        File.join schema_dir, file
+      end
+    end
+    
     def working_dir
       env['HOOKUP_WORKING_DIR'] || '.'
     end
@@ -146,7 +152,7 @@ class Hookup
     end
 
     def migrate
-      schemas = %W(#{schema_dir}/schema.rb #{schema_dir}/development_structure.sql).select do |schema|
+      schemas = possible_schemas.select do |schema|
         status = %x{git diff --name-status #{old} #{new} -- #{schema}}.chomp
         rake 'db:create' if status =~ /^A/
         status !~ /^D/ && !status.empty?
