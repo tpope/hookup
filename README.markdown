@@ -50,7 +50,7 @@ the two versions.
 
 ### Skip Hookup
 
-Set `SKIP_HOOKUP` environment variable to skip hookup.
+Set the `SKIP_HOOKUP` environment variable to skip hookup.
 
     SKIP_HOOKUP=1 git checkout master
 
