@@ -217,13 +217,18 @@ class Hookup
   def resolve_schema(a, o, b, marker_size = 7)
     system 'git', 'merge-file', "--marker-size=#{marker_size}", a, o, b
     body = File.read(a)
-    asd = "ActiveRecord::Schema.define"
-    x = body.sub!(/^<+ .*\n#{asd}\(:version => (\d+)\) do\n=+\n#{asd}\(:version => (\d+)\) do\n>+ .*/) do
-      "#{asd}(:version => #{[$1, $2].max}) do"
-    end
+    resolve_schema_version body, ":version =>"
+    resolve_schema_version body, "version:"
     File.open(a, 'w') { |f| f.write(body) }
     if body.include?('<' * marker_size.to_i)
       raise Failure, 'Failed to automatically resolve schema conflict'
+    end
+  end
+
+  def resolve_schema_version(body, version)
+    asd = "ActiveRecord::Schema.define"
+    body.sub!(/^<+ .*\n#{asd}\(#{version} (\d+)\) do\n=+\n#{asd}\(#{version} (\d+)\) do\n>+ .*/) do
+      "#{asd}(#{version} #{[$1, $2].max}) do"
     end
   end
 
