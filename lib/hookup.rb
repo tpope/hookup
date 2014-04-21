@@ -36,7 +36,7 @@ class Hookup
   def git_dir
     unless @git_dir
       @git_dir = %x{git rev-parse --git-dir}.chomp
-      raise Error, dir unless $?.success?
+      raise Error unless $?.success?
     end
     @git_dir
   end
@@ -87,7 +87,7 @@ class Hookup
         File.join schema_dir, file
       end
     end
-    
+
     def working_dir
       env['HOOKUP_WORKING_DIR'] || '.'
     end
