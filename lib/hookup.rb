@@ -41,8 +41,12 @@ class Hookup
     @git_dir
   end
 
+  def post_checkout_file
+    File.join(git_dir, 'hooks', 'post-checkout')
+  end
+
   def install
-    append(File.join(git_dir, 'hooks', 'post-checkout'), 0777) do |body, f|
+    append(post_checkout_file, 0777) do |body, f|
       f.puts "#!/bin/bash" unless body
       f.puts %(hookup post-checkout "$@") if body !~ /hookup/
     end
@@ -55,6 +59,14 @@ class Hookup
     system 'git', 'config', 'merge.railsschema.driver', 'hookup resolve-schema %A %O %B %L'
 
     puts "Hooked up!"
+  end
+
+  def remove
+    body = IO.readlines(post_checkout_file)
+    body.reject! { |item| item =~ /hookup/ }
+    File.open(post_checkout_file, 'w') { |file| file.puts body.join }
+
+    puts "Hookup removed!"
   end
 
   def append(file, *args)
@@ -87,7 +99,7 @@ class Hookup
         File.join schema_dir, file
       end
     end
-    
+
     def working_dir
       env['HOOKUP_WORKING_DIR'] || '.'
     end
