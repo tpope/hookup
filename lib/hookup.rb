@@ -1,3 +1,5 @@
+require 'stringio'
+
 class Hookup
 
   class Error < RuntimeError
@@ -144,6 +146,21 @@ class Hookup
       File.exist?('Gemfile')
     end
 
+    def zeus?
+      File.exist?('.zeus.sock') && zeus_running?
+    end
+
+    def zeus_running?
+      processes = StringIO.new(%x{ps | grep 'zeus'}).readlines
+      !!processes.detect do |e|
+        # greedily read up to last digit, so that this:
+        #     14105 ttys000    0:01.66 zeus slave: boot
+        # becomes this:
+        #     zeus slave: boot
+        e.split(/.+\d/).last.strip == 'zeus slave: boot'
+      end
+    end
+
     def bundle
       return unless bundler?
       if %x{git diff --name-only #{old} #{new}} =~ /^Gemfile|\.gemspec$/
@@ -212,7 +229,9 @@ class Hookup
 
     def rake(*args)
       Dir.chdir(working_dir) do
-        if bundler?
+        if zeus?
+          system 'zeus', 'rake', *args
+        elsif bundler?
           system 'bundle', 'exec', 'rake', *args
         else
           system 'rake', *args
