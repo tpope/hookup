@@ -212,7 +212,9 @@ class Hookup
 
     def rake(*args)
       Dir.chdir(working_dir) do
-        if bundler?
+        if File.executable?('bin/rake')
+          system 'bin/rake', *args
+        elsif bundler?
           system 'bundle', 'exec', 'rake', *args
         else
           system 'rake', *args
