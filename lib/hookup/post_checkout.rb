@@ -54,9 +54,14 @@ class Hookup
     def run
       return if skipped? || env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
       unless partial?
+        update_submodules
         bundle
         migrate
       end
+    end
+
+    def update_submodules
+      system "git submodule update --init"
     end
 
     def bundler?
