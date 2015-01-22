@@ -119,9 +119,9 @@ class Hookup
         _changes = x("git diff --name-status #{new_sha} -- #{schemas.join(' ')}")
 
         unless _changes.empty?
-          system 'git', 'checkout', '--', *schemas
+          puts "\e[33mSchema out of sync.\e[0m"
 
-          puts "Schema out of sync."
+          system 'git', 'checkout', '--', *schemas
 
           fallback = env['HOOKUP_LOAD_SCHEMA']
           if fallback && fallback != ''
