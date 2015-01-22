@@ -10,7 +10,7 @@ class Hookup
     end
 
     def schema_dir
-      File.join(working_dir, env['HOOKUP_SCHEMA_DIR'])
+      @schema_dir ||= File.join(working_dir, env['HOOKUP_SCHEMA_DIR']).gsub(/^\.\//, "")
     end
 
     def possible_schemas
