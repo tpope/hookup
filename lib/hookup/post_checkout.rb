@@ -52,12 +52,11 @@ class Hookup
     end
 
     def run
-      return if skipped? || env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
-      unless partial?
-        update_submodules
-        bundle
-        migrate
-      end
+      return if skipped? || rebase? || no_change? || partial?
+
+      update_submodules
+      bundle
+      migrate
     end
 
     def update_submodules
@@ -149,6 +148,14 @@ class Hookup
       env['SKIP_HOOKUP']
     end
 
+    def rebase?
+      env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
+    end
+
+    def no_change?
+      old_sha == new_sha
+    end
+
     def system(*args)
       puts "\e[90m[#{File.basename Dir.pwd}] #{args.join(" ")}\e[0m"
       super
@@ -160,7 +167,7 @@ class Hookup
     end
 
     def changes
-      @changes ||= DiffChanges.new((old_sha != new_sha) && x("git diff --name-status #{old_sha} #{new_sha}"))
+      @changes ||= DiffChanges.new(x("git diff --name-status #{old_sha} #{new_sha}"))
     end
 
     class DiffChange < Struct.new(:type, :file)
