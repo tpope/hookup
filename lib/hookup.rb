@@ -19,6 +19,14 @@ class Hookup
     puts e
     exit
   end
+  
+  def self.debug(message)
+    puts "\e[33m[debug] #{message}\e[0m" if debug?
+  end
+
+  def self.debug?
+    ENV["DEBUG_HOOKUP"] == "1"
+  end
 
   def run(*argv)
     if argv.empty?

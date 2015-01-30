@@ -48,6 +48,8 @@ class Hookup
       @new_sha = args.shift || 'HEAD'
       @partial = (args.shift == '0')
 
+      debug "#{old_sha}...#{new_sha}"
+
       env['HOOKUP_SCHEMA_DIR'] = 'db' unless env['HOOKUP_SCHEMA_DIR'] && File.directory?(schema_dir)
     end
 
@@ -149,7 +151,7 @@ class Hookup
     end
 
     def rebase?
-      env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
+      debug "GIT_REFLOG_ACTION: #{env['GIT_REFLOG_ACTION']}"
     end
 
     def no_change?
@@ -164,6 +166,10 @@ class Hookup
     def x(command)
       puts "\e[90m[#{File.basename Dir.pwd}] #{command}\e[0m"
       %x{#{command}}
+    end
+
+    def debug(message)
+      Hookup.debug(message)
     end
 
     def changes
