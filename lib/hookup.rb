@@ -89,7 +89,7 @@ class Hookup
   protected :append
 
   def post_checkout(*args)
-    PostCheckout.new(ENV, *args).run
+    PostCheckout.new("post-checkout", ENV, *args).run
   end
 
   def resolve_schema(a, o, b, marker_size = 7)

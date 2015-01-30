@@ -3,7 +3,7 @@ require "delegate"
 class Hookup
   class PostCheckout
 
-    attr_reader :old_sha, :new_sha, :env
+    attr_reader :old_sha, :new_sha, :env, :hook
 
     def partial?
       @partial
@@ -23,7 +23,8 @@ class Hookup
       env['HOOKUP_WORKING_DIR'] || '.'
     end
 
-    def initialize(environment, *args)
+    def initialize(hook, environment, *args)
+      @hook = hook
       @env ||= environment.to_hash.dup
       require 'optparse'
       opts = OptionParser.new
@@ -48,13 +49,13 @@ class Hookup
       @new_sha = args.shift || 'HEAD'
       @partial = (args.shift == '0')
 
-      debug "#{old_sha}...#{new_sha}"
+      debug "#{hook}: #{old_sha} -> #{new_sha}"
 
       env['HOOKUP_SCHEMA_DIR'] = 'db' unless env['HOOKUP_SCHEMA_DIR'] && File.directory?(schema_dir)
     end
 
     def run
-      return if skipped? || rebase? || no_change? || partial?
+      return if skipped? || no_change? || checkout_during_rebase? || partial?
 
       update_submodules
       bundle
@@ -150,10 +151,9 @@ class Hookup
       env['SKIP_HOOKUP']
     end
 
-    def rebase?
+    def checkout_during_rebase?
       debug "GIT_REFLOG_ACTION: #{env['GIT_REFLOG_ACTION']}"
-      return false # let this work on pull
-      # env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
+      hook == "post-checkout" && env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
     end
 
     def no_change?
