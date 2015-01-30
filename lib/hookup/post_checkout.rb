@@ -152,6 +152,8 @@ class Hookup
 
     def rebase?
       debug "GIT_REFLOG_ACTION: #{env['GIT_REFLOG_ACTION']}"
+      return false # let this work on pull
+      # env['GIT_REFLOG_ACTION'] =~ /^(?:pull|rebase)/
     end
 
     def no_change?
