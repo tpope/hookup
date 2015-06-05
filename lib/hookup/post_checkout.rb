@@ -78,7 +78,7 @@ class Hookup
           git_dir = ENV.delete('GIT_DIR')
           unless system("bundle check > /dev/null 2> /dev/null")
             Dir.chdir(working_dir) do
-              system("bundle | grep -v '^Using ' | grep -v ' is complete'")
+              system("bundle")
             end
           end
         ensure
