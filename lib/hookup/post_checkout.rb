@@ -76,7 +76,7 @@ class Hookup
         begin
           # If Bundler in turn spawns Git, it can get confused by $GIT_DIR
           git_dir = ENV.delete('GIT_DIR')
-          unless system("bundle check")
+          unless system("bundle check > /dev/null 2> /dev/null")
             Dir.chdir(working_dir) do
               system("bundle | grep -v '^Using ' | grep -v ' is complete'")
             end
