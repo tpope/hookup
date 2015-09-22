@@ -102,9 +102,7 @@ class Hookup
           file = migration.file
           begin
             system 'git', 'checkout', old_sha, '--', file
-            unless rake 'db:migrate:down', "VERSION=#{File.basename(file)}"
-              raise Error, "Failed to rollback #{File.basename(file)}"
-            end
+            rake 'db:migrate:down', "VERSION=#{File.basename(file)}"
           ensure
             if migration.deleted?
               system 'git', 'rm', '--force', '--quiet', '--', file
