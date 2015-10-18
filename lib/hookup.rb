@@ -45,13 +45,17 @@ class Hookup
     File.join(git_dir, 'hooks', 'post-checkout')
   end
 
+  def info_attributes_file
+    File.join(git_dir, 'info', 'attributes')
+  end
+
   def install
     append(post_checkout_file, 0777) do |body, f|
       f.puts "#!/bin/bash" unless body
       f.puts %(hookup post-checkout "$@") if body !~ /hookup/
     end
 
-    append(File.join(git_dir, 'info', 'attributes')) do |body, f|
+    append(info_attributes_file) do |body, f|
       map = 'db/schema.rb merge=railsschema'
       f.puts map unless body.to_s.include?(map)
     end
@@ -65,6 +69,12 @@ class Hookup
     body = IO.readlines(post_checkout_file)
     body.reject! { |item| item =~ /hookup/ }
     File.open(post_checkout_file, 'w') { |file| file.puts body.join }
+
+    body = IO.readlines(info_attributes_file)
+    body.reject! { |item| item =~ /railsschema/ }
+    File.open(info_attributes_file, 'w') { |file| file.puts body.join }
+
+    system 'git', 'config', '--unset', 'merge.railsschema.driver'
 
     puts "Hookup removed!"
   end
