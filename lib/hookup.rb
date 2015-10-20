@@ -41,6 +41,14 @@ class Hookup
     @git_dir
   end
 
+  def bundler?
+    !!ENV['BUNDLE_GEMFILE']
+  end
+
+  def make_command(command)
+    bundler? ? command.insert(0, "bundle exec ") : command
+  end
+
   def post_checkout_file
     File.join(git_dir, 'hooks', 'post-checkout')
   end
@@ -52,7 +60,7 @@ class Hookup
   def install
     append(post_checkout_file, 0777) do |body, f|
       f.puts "#!/bin/bash" unless body
-      f.puts %(hookup post-checkout "$@") if body !~ /hookup/
+      f.puts make_command(%(hookup post-checkout "$@")) if body !~ /hookup/
     end
 
     append(info_attributes_file) do |body, f|
@@ -60,7 +68,7 @@ class Hookup
       f.puts map unless body.to_s.include?(map)
     end
 
-    system 'git', 'config', 'merge.railsschema.driver', 'hookup resolve-schema %A %O %B %L'
+    system 'git', 'config', 'merge.railsschema.driver', make_command('hookup resolve-schema %A %O %B %L')
 
     puts "Hooked up!"
   end
