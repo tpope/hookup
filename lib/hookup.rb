@@ -19,7 +19,7 @@ class Hookup
     puts e
     exit
   end
-  
+
   def self.debug(message)
     puts "\e[33m[debug] #{message}\e[0m" if debug?
   end
