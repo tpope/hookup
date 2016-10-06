@@ -53,6 +53,10 @@ the two versions.
 Set the `SKIP_HOOKUP` environment variable to skip hookup.
 
     SKIP_HOOKUP=1 git checkout master
+    
+### Removing Hookup
+    
+    hookup remove
 
 ChangeLog
 ---------
