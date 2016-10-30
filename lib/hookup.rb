@@ -172,7 +172,7 @@ class Hookup
           unless $?.success?
             puts "Bundling..."
             Dir.chdir(working_dir) do
-              system("bundle | grep -v '^Using ' | grep -v ' is complete'")
+              system("bundle #{ENV['HOOKUP_GIT_OPTIONS']} | grep -v '^Using ' | grep -v ' is complete'")
             end
           end
         ensure
