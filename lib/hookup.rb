@@ -1,3 +1,5 @@
+require 'pathname'
+
 class Hookup
 
   class Error < RuntimeError
@@ -122,6 +124,14 @@ class Hookup
       env['HOOKUP_WORKING_DIR'] || '.'
     end
 
+    def git_work_tree
+      unless @git_work_tree
+        @git_work_tree = %x{git rev-parse --show-toplevel}.chomp
+        raise Error, dir unless $?.success?
+      end
+      @git_work_tree
+    end
+
     def initialize(environment, *args)
       @env ||= environment.to_hash.dup
       require 'optparse'
@@ -193,6 +203,7 @@ class Hookup
       migrations = %x{git diff --name-status #{old} #{new} -- #{schema_dir}/migrate}.scan(/.+/).map {|l| l.split(/\t/) }
       begin
         migrations.select {|(t,f)| %w(D M).include?(t)}.reverse.each do |type, file|
+          file = Pathname.new(File.join(git_work_tree, file)).relative_path_from(Pathname.new(Dir.getwd)).to_s
           begin
             system 'git', 'checkout', old, '--', file
             unless rake 'db:migrate:down', "VERSION=#{File.basename(file)}"
