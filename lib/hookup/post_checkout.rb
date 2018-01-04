@@ -60,6 +60,7 @@ class Hookup
       update_submodules
       bundle
       migrate
+      yarn_install
     end
 
     def update_submodules
@@ -143,6 +144,15 @@ class Hookup
           system 'rake', *args
         end
       end
+    end
+
+    def yarn?
+      File.exist?('yarn.lock')
+    end
+
+    def yarn_install
+      return unless yarn?
+      system 'yarn install'
     end
 
     def skipped?
