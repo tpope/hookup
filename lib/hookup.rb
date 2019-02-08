@@ -259,7 +259,7 @@ class Hookup
 
   def resolve_schema_version(body, version)
     asd = "ActiveRecord::Schema.define"
-    body.sub!(/^<+ .*\n#{asd}\(#{version} (\d+)\) do\n=+\n#{asd}\(#{version} (\d+)\) do\n>+ .*/) do
+    body.sub!(/^<+ .*\n#{asd}\(#{version} ([0-9_]+)\) do\n=+\n#{asd}\(#{version} ([0-9_]+)\) do\n>+ .*/) do
       "#{asd}(#{version} #{[$1, $2].max}) do"
     end
   end
