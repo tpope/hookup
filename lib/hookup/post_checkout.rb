@@ -77,9 +77,9 @@ class Hookup
         begin
           # If Bundler in turn spawns Git, it can get confused by $GIT_DIR
           git_dir = ENV.delete('GIT_DIR')
-          unless system("bundle check > /dev/null 2> /dev/null")
+          unless rbenv_system("bundle check > /dev/null 2> /dev/null")
             Dir.chdir(working_dir) do
-              system("bundle")
+              rbenv_system("bundle")
             end
           end
         ensure
@@ -128,7 +128,7 @@ class Hookup
           fallback = env['HOOKUP_LOAD_SCHEMA']
           if fallback && fallback != ''
             puts "Trying #{fallback}..."
-            system fallback
+            rbenv_system fallback
           end
         end
       end
@@ -137,13 +137,31 @@ class Hookup
     def rake(*args)
       Dir.chdir(working_dir) do
         if File.executable?('bin/rake')
-          system 'bin/rake', *args
+          rbenv_system 'bin/rake', *args
         elsif bundler?
-          system 'bundle', 'exec', 'rake', *args
+          rbenv_system 'bundle', 'exec', 'rake', *args
         else
-          system 'rake', *args
+          rbenv_system 'rake', *args
         end
       end
+    end
+
+    def rbenv?
+      File.exist?('.ruby-version')
+    end
+
+    def rbenv_version
+      return unless rbenv?
+      File.open(".ruby-version", "r") do |f|
+        f.gets.gsub(/\n/, "")
+      end
+    end
+
+    def rbenv_path
+      version = rbenv_version
+      return unless version
+      path = File.join(ENV["RBENV_ROOT"], "versions", version, "bin")
+      Dir.exist?(path) ? path : nil
     end
 
     def yarn?
@@ -171,6 +189,22 @@ class Hookup
     def system(*args)
       puts "\e[90m[#{File.basename Dir.pwd}] #{args.join(" ")}\e[0m"
       super
+    end
+
+    def rbenv_system(*args)
+      begin
+        original_version = ENV["RBENV_VERSION"]
+        original_path = ENV["PATH"]
+        temp_version = rbenv_version
+        temp_path = rbenv_path
+        ENV["RBENV_VERSION"] = temp_version if temp_version
+        ENV["PATH"] = "#{temp_path}:#{ENV["PATH"]}" if temp_path
+
+        system(*args)
+      ensure
+        ENV["RBENV_VERSION"] = original_version
+        ENV["PATH"] = original_path
+      end
     end
 
     def x(command)
