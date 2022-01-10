@@ -59,8 +59,8 @@ class Hookup
 
       update_submodules
       bundle
-      migrate
       yarn_install
+      migrate
     end
 
     def update_submodules
@@ -165,12 +165,21 @@ class Hookup
     end
 
     def yarn?
-      File.exist?('yarn.lock')
+      yarn_lock_files.any?
     end
 
     def yarn_install
       return unless yarn?
-      system 'yarn install'
+
+      yarn_lock_files.each do |lock_file|
+        Dir.chdir(File.dirname(lock_file)) do
+          system "yarn install"
+        end
+      end
+    end
+
+    def yarn_lock_files
+      @yarn_lock_files ||= Dir.glob("**/yarn.lock").reject { |path| path =~ /node_modules/ }
     end
 
     def skipped?
