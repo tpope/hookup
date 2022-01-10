@@ -60,6 +60,7 @@ class Hookup
       update_submodules
       bundle
       yarn_install
+      rebuild_containers
       migrate
     end
 
@@ -71,7 +72,12 @@ class Hookup
       File.exist?('Gemfile')
     end
 
+    def docker?
+      File.exist?('docker-compose.yml')
+    end
+
     def bundle
+      return if docker?
       return unless bundler?
       if changes.grep(/^Gemfile|\.gemspec$/).any?
         begin
@@ -136,7 +142,9 @@ class Hookup
 
     def rake(*args)
       Dir.chdir(working_dir) do
-        if File.executable?('bin/rake')
+        if docker? # Assumes one of the containers is named "rails"
+          system "docker-compose", "run", "rails", "rake", *args
+        elsif File.executable?('bin/rake')
           rbenv_system 'bin/rake', *args
         elsif bundler?
           rbenv_system 'bundle', 'exec', 'rake', *args
@@ -169,6 +177,7 @@ class Hookup
     end
 
     def yarn_install
+      return if docker?
       return unless yarn?
 
       yarn_lock_files.each do |lock_file|
@@ -180,6 +189,15 @@ class Hookup
 
     def yarn_lock_files
       @yarn_lock_files ||= Dir.glob("**/yarn.lock").reject { |path| path =~ /node_modules/ }
+    end
+
+    def rebuild_containers
+      return unless docker?
+
+      # Rebuilding the containers should pick up any changes to either
+      # Gemfile.lock or yarn.lock and rebuild ... or just used the
+      # cached version if there are no changes.
+      system "docker-compose build"
     end
 
     def skipped?
