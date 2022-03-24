@@ -143,7 +143,7 @@ class Hookup
     def rake(*args)
       Dir.chdir(working_dir) do
         if docker? # Assumes one of the containers is named "rails"
-          system "docker-compose", "run", "rails", "rake", *args
+          system "docker", "compose", "run", "--rm", "rails", "rake", *args
         elsif File.executable?('bin/rake')
           rbenv_system 'bin/rake', *args
         elsif bundler?
@@ -197,7 +197,7 @@ class Hookup
       # Rebuilding the containers should pick up any changes to either
       # Gemfile.lock or yarn.lock and rebuild ... or just used the
       # cached version if there are no changes.
-      system "docker-compose build"
+      system "docker compose build"
     end
 
     def skipped?
