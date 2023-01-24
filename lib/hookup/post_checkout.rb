@@ -182,7 +182,7 @@ class Hookup
 
       yarn_lock_files.each do |lock_file|
         Dir.chdir(File.dirname(lock_file)) do
-          system "yarn install"
+          system "yarn install --pure-lockfile"
         end
       end
     end
